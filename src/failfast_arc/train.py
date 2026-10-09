@@ -110,7 +110,8 @@ def main() -> None:
             scheduler.step()
             optimizer.zero_grad(set_to_none=True)
         entry = {"step": step, "loss": float(loss.detach().cpu()), "bce": float(pieces["bce"]), "rank": float(pieces["rank"])}
-        if step % 100 == 0 or step == cfg.optimizer_steps:
+        validation_interval = min(500, cfg.optimizer_steps)
+        if step % validation_interval == 0 or step == cfg.optimizer_steps:
             entry["validation_log_loss"] = _validation_loss(model, tokenizer, validation, cfg, "cuda")
             if entry["validation_log_loss"] < best:
                 best = entry["validation_log_loss"]

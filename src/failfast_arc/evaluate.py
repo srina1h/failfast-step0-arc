@@ -11,7 +11,7 @@ from transformers import AutoTokenizer
 
 from .config import ExperimentConfig
 from .controls import assert_no_split_leakage, shuffled_within_task, synthetic_positive_control
-from .metrics import fpr_operating_points, summarize_scores, within_task_auc
+from .metrics import bootstrap_intervals, fpr_operating_points, summarize_scores, within_task_auc
 from .model import load_trained_monitor
 
 
@@ -62,6 +62,7 @@ def main() -> None:
     test.to_parquet(args.output / "test_scores.parquet", index=False)
     validation.to_parquet(args.output / "validation_scores.parquet", index=False)
     metrics = summarize_scores(test)
+    metrics["bootstrap"] = bootstrap_intervals(test, cfg.seed)
     (args.output / "metrics.json").write_text(json.dumps(metrics, indent=2, sort_keys=True) + "\n")
     fpr_operating_points(test, validation).to_csv(args.output / "operating_points.csv", index=False)
     shuffled = shuffled_within_task(test, cfg.seed)

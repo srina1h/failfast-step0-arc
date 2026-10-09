@@ -35,6 +35,14 @@ def _total_tokens(messages: list[dict], tokenizer) -> int:
     return total
 
 
+def _binary_label(value) -> int:
+    if value in (True, 1, "1", "true", "True"):
+        return 1
+    if value in (False, 0, "0", "false", "False"):
+        return 0
+    raise ValueError(f"invalid resolved label: {value!r}")
+
+
 def _summary(frame: pd.DataFrame, cfg: ExperimentConfig) -> dict:
     by_split = {}
     for split, group in frame.groupby("split"):
@@ -84,7 +92,7 @@ def main() -> None:
                 "repo": str(row["repo"]),
                 "instance_id": str(row["instance_id"]),
                 "trajectory_id": tid,
-                "resolved": int(bool(row["resolved"])),
+                "resolved": _binary_label(row["resolved"]),
                 "total_tokens": total,
             })
     selected = split_repositories(select_cohort(pd.DataFrame(metadata), cfg), cfg.seed)
@@ -109,7 +117,7 @@ def main() -> None:
             )
             text = serialized.text
             if cfg.synthetic_outcome_token:
-                text += "\n\n[synthetic-control outcome=" + ("pass" if meta["resolved"] else "fail") + "]"
+                text = "[synthetic-control outcome=" + ("pass" if meta["resolved"] else "fail") + "]\n\n" + text
             records.append({
                 **meta,
                 "text": text,

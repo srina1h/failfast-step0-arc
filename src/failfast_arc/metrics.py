@@ -81,3 +81,41 @@ def fpr_operating_points(test: pd.DataFrame, validation: pd.DataFrame, rates=(0.
             "test_recall": float(pred[positives].mean()) if positives.any() else float("nan"),
         })
     return pd.DataFrame(rows)
+
+
+def bootstrap_intervals(frame: pd.DataFrame, seed: int, replicates: int = 1_000) -> dict:
+    rng = np.random.default_rng(seed)
+    repos = frame.repo.drop_duplicates().to_numpy()
+    tasks = frame.instance_id.drop_duplicates().to_numpy()
+    pooled, within_pair, within_task = [], [], []
+    for _ in range(replicates):
+        sampled_repos = rng.choice(repos, size=len(repos), replace=True)
+        repo_parts = []
+        for draw, repo in enumerate(sampled_repos):
+            part = frame[frame.repo == repo].copy()
+            part["bootstrap_repo"] = draw
+            repo_parts.append(part)
+        repo_sample = pd.concat(repo_parts, ignore_index=True)
+        if repo_sample.resolved.nunique() == 2:
+            pooled.append(roc_auc_score(repo_sample.resolved, repo_sample.score))
+
+        sampled_tasks = rng.choice(tasks, size=len(tasks), replace=True)
+        task_parts = []
+        for draw, task in enumerate(sampled_tasks):
+            part = frame[frame.instance_id == task].copy()
+            part["instance_id"] = part.instance_id.astype(str) + f"#bootstrap-{draw}"
+            task_parts.append(part)
+        task_result = within_task_auc(pd.concat(task_parts, ignore_index=True))
+        if np.isfinite(task_result.pair_weighted):
+            within_pair.append(task_result.pair_weighted)
+            within_task.append(task_result.task_weighted)
+
+    def interval(values):
+        return [float(x) for x in np.quantile(values, [0.025, 0.975])] if values else [float("nan"), float("nan")]
+
+    return {
+        "replicates": replicates,
+        "pooled_auc_95ci": interval(pooled),
+        "within_pair_weighted_auc_95ci": interval(within_pair),
+        "within_task_weighted_auc_95ci": interval(within_task),
+    }
