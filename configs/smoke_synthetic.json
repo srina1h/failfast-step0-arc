@@ -1,0 +1,8 @@
+{
+  "name": "smoke_synthetic",
+  "input_arm": "issue_window",
+  "tasks": 24,
+  "attempts_per_task": 11,
+  "optimizer_steps": 100,
+  "synthetic_outcome_token": true
+}
