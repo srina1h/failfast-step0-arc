@@ -10,6 +10,8 @@ def test_arc_jobs_are_batch_only_and_use_beegfs():
     assert "srun" not in all_text
     assert "/mnt/beegfs/ssrini27/failfast-step0" in all_text
     assert "GITHUB_TOKEN" not in all_text
+    assert "#SBATCH --mem=" not in all_text
+    assert "#SBATCH --gres=" not in all_text
 
 
 def test_full_submit_checks_gate_markers():

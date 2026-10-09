@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=ff-full-a6000
 #SBATCH --partition=a6000
-#SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
 #SBATCH --time=1-00:00:00
 #SBATCH --output=/home/ssrini27/failfast-arc/logs/full-a6000-%A-%a.out
 #SBATCH --error=/home/ssrini27/failfast-arc/logs/full-a6000-%A-%a.err

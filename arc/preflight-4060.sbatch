@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=ff-preflight
 #SBATCH --partition=rtx4060ti16g
-#SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=24G
 #SBATCH --time=01:00:00
 #SBATCH --output=/home/ssrini27/failfast-arc/logs/preflight-%j.out
 #SBATCH --error=/home/ssrini27/failfast-arc/logs/preflight-%j.err

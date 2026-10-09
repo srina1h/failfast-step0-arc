@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=ff-smoke
 #SBATCH --partition=rtx4060ti16g
-#SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=48G
 #SBATCH --time=12:00:00
 #SBATCH --output=/home/ssrini27/failfast-arc/logs/smoke-%j.out
 #SBATCH --error=/home/ssrini27/failfast-arc/logs/smoke-%j.err

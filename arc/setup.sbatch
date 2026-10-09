@@ -2,7 +2,6 @@
 #SBATCH --job-name=ff-setup
 #SBATCH --partition=normal
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=32G
 #SBATCH --time=04:00:00
 #SBATCH --output=/home/ssrini27/failfast-arc/logs/setup-%j.out
 #SBATCH --error=/home/ssrini27/failfast-arc/logs/setup-%j.err
