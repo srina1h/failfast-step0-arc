@@ -15,4 +15,3 @@ def test_leakage_is_rejected():
 
 def test_synthetic_control_is_detectable():
     assert synthetic_positive_control(seed=4, n=300) >= 0.90
-

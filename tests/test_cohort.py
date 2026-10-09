@@ -34,4 +34,3 @@ def test_repository_never_crosses_splits():
     assert split.groupby("repo").split.nunique().max() == 1
     assert split.groupby("instance_id").split.nunique().max() == 1
     assert set(split.split) == {"train", "validation", "test"}
-

@@ -13,4 +13,3 @@ else
   echo "profile must be 4060 or a6000" >&2
   exit 2
 fi
-

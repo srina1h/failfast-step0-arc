@@ -16,4 +16,3 @@ def test_empty_pairs_have_zero_rank_loss():
     loss, parts = compute_loss(torch.tensor([0.0], requires_grad=True), torch.tensor([1.0]), torch.tensor([], dtype=torch.long), torch.tensor([], dtype=torch.long), 0.25)
     assert parts["rank"].item() == 0.0
     assert torch.isfinite(loss)
-

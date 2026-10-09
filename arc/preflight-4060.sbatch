@@ -15,4 +15,3 @@ cd "$REPO"
 "$PYTHON" -m failfast_arc.preflight --config configs/full_issue_window.json --output "$RUN"
 cp "$RUN/memory.json" "$GATES/memory.json"
 cp "$RUN/PREFLIGHT_OK" "$GATES/PREFLIGHT_OK"
-

@@ -21,4 +21,3 @@ def test_unknown_config_key_is_rejected(tmp_path):
     path.write_text('{"unknown": 1}')
     with pytest.raises(ValueError, match="unknown"):
         ExperimentConfig.load(path)
-

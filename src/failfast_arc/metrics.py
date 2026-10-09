@@ -81,4 +81,3 @@ def fpr_operating_points(test: pd.DataFrame, validation: pd.DataFrame, rates=(0.
             "test_recall": float(pred[positives].mean()) if positives.any() else float("nan"),
         })
     return pd.DataFrame(rows)
-

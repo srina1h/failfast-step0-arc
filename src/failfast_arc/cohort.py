@@ -54,4 +54,3 @@ def split_repositories(rows: pd.DataFrame, seed: int) -> pd.DataFrame:
     if out.groupby("instance_id").split.nunique().max() != 1:
         raise AssertionError("task crossed splits")
     return out
-

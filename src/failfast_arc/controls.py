@@ -27,4 +27,3 @@ def shuffled_within_task(frame: pd.DataFrame, seed: int) -> pd.DataFrame:
     out = frame.copy()
     out["resolved"] = out.groupby("instance_id").resolved.transform(lambda x: rng.permutation(x.to_numpy()))
     return out
-

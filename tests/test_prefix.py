@@ -45,4 +45,3 @@ def test_window_has_eight_recent_steps_and_pinned_edit():
     assert "important-edit" in out.text
     assert "step9" in out.text
     assert "step0" not in out.text
-

@@ -24,4 +24,3 @@ def test_unanimous_tasks_are_reported_not_scored():
     result = within_task_auc(frame)
     assert result.tasks_used == 1
     assert result.tasks_excluded == 1
-

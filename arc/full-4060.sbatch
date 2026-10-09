@@ -21,4 +21,3 @@ cd "$REPO"
 "$PYTHON" -m failfast_arc.prepare --config "$CONFIG" --output "$RUN/prepared" --cache "$CACHE"
 "$PYTHON" -m failfast_arc.train --config "$CONFIG" --prepared "$RUN/prepared" --output "$RUN/train"
 "$PYTHON" -m failfast_arc.evaluate --config "$CONFIG" --prepared "$RUN/prepared" --checkpoint "$RUN/train/best" --output "$RUN/eval"
-

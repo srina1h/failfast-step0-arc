@@ -98,4 +98,3 @@ def serialize_example(row: dict, arm: str, landmark_tokens: int, max_monitor_tok
         monitor_token_count=monitor_count,
         included_message_indices=indices,
     )
-

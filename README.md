@@ -81,4 +81,3 @@ The score table can be used by a separate abort-and-restart replay. This reposit
 ## Data and license
 
 The code downloads the public `nebius/SWE-rebench-openhands-trajectories` dataset at the pinned revision. Raw trajectories and model weights are not stored in this repository. Users must follow the licenses and terms of the source dataset and model.
-
