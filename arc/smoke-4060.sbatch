@@ -9,8 +9,10 @@ set -euo pipefail
 source /home/ssrini27/failfast-arc/common.sh
 require_gate_commit "$GATES/PREFLIGHT_OK"
 RUN="$ROOT/runs/smoke-$SLURM_JOB_ID"
+HOME_GATES=/home/ssrini27/failfast-arc/gates
 mkdir -p "$RUN"
 rm -f "$GATES/SMOKE_OK"
+rm -f "$HOME_GATES/SMOKE_OK"
 cd "$REPO"
 for CONFIG in configs/smoke_issue.json configs/smoke.json configs/smoke_synthetic.json; do
   NAME=$(basename "$CONFIG" .json)
@@ -26,4 +28,6 @@ if metrics["pooled_auc"] < 0.90 or metrics["within_task"]["pair_weighted"] < 0.9
 PY
 printf '%s\n' "$CURRENT_COMMIT" > "$RUN/SMOKE_OK"
 cp "$RUN/SMOKE_OK" "$GATES/SMOKE_OK"
+cp "$RUN/SMOKE_OK" "$HOME_GATES/SMOKE_OK"
 printf '%s\n' "$RUN" > "$GATES/smoke_run_path.txt"
+printf '%s\n' "$RUN" > "$HOME_GATES/smoke_run_path.txt"

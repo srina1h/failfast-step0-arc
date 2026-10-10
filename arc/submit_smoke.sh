@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
-test -f /mnt/beegfs/ssrini27/failfast-step0/gates/PREFLIGHT_OK
-ROOT=/mnt/beegfs/ssrini27/failfast-step0
-test "$(cat "$ROOT/gates/PREFLIGHT_OK")" = "$(git -C "$ROOT/current/repo" rev-parse HEAD)"
+GATES=/home/ssrini27/failfast-arc/gates
+test -f "$GATES/SETUP_OK"
+test -f "$GATES/PREFLIGHT_OK"
+REMOTE=$(git ls-remote https://github.com/srina1h/failfast-step0-arc.git refs/heads/main | awk '{print $1}')
+test "$(cat "$GATES/SETUP_OK")" = "$REMOTE"
+test "$(cat "$GATES/PREFLIGHT_OK")" = "$REMOTE"
 cd /home/ssrini27/failfast-arc
 sbatch --parsable smoke-4060.sbatch

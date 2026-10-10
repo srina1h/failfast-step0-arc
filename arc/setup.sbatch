@@ -8,12 +8,14 @@
 set -euo pipefail
 
 ROOT=/mnt/beegfs/ssrini27/failfast-step0
+HOME_GATES=/home/ssrini27/failfast-arc/gates
 REPO_URL=${FAILFAST_REPO_URL:-https://github.com/srina1h/failfast-step0-arc.git}
 REF=${FAILFAST_REF:-main}
 RUN="$ROOT/setup-runs/$SLURM_JOB_ID"
 TOOLS="$ROOT/tools"
-mkdir -p "$RUN" "$TOOLS" "$ROOT/cache" "$ROOT/gates" "$ROOT/current" /home/ssrini27/failfast-arc/logs
+mkdir -p "$RUN" "$TOOLS" "$ROOT/cache" "$ROOT/gates" "$ROOT/current" "$HOME_GATES" /home/ssrini27/failfast-arc/logs
 rm -f "$ROOT/gates/SETUP_OK" "$ROOT/gates/PREFLIGHT_OK" "$ROOT/gates/SMOKE_OK"
+rm -f "$HOME_GATES/SETUP_OK" "$HOME_GATES/PREFLIGHT_OK" "$HOME_GATES/SMOKE_OK"
 export UV_CACHE_DIR="$ROOT/cache/uv"
 
 curl --proto '=https' --tlsv1.2 -LsSf https://releases.astral.sh/github/uv/releases/download/0.12.17/uv-installer.sh -o "$RUN/uv-installer.sh"
@@ -55,4 +57,5 @@ manifest = {
 Path("$RUN/setup_manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
 PY
 cp "$RUN/setup_manifest.json" "$ROOT/gates/setup_manifest.json"
-printf '%s\n' "$COMMIT" > "$ROOT/gates/SETUP_OK"
+cp "$RUN/setup_manifest.json" "$HOME_GATES/setup_manifest.json"
+printf '%s\n' "$COMMIT" | tee "$ROOT/gates/SETUP_OK" "$HOME_GATES/SETUP_OK" >/dev/null
