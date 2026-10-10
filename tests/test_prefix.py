@@ -1,4 +1,3 @@
-import json
 
 from failfast_arc.prefix import serialize_example
 
