@@ -16,6 +16,10 @@ from .config import ExperimentConfig
 from .model import build_monitor, compute_loss
 
 
+def binary_log_loss(labels, scores) -> float:
+    return float(log_loss(labels, np.clip(scores, 1e-7, 1 - 1e-7), labels=[0, 1]))
+
+
 def _mixed_groups(frame: pd.DataFrame) -> list[tuple[str, list[int], list[int]]]:
     groups = []
     for instance_id, group in frame.groupby("instance_id"):
@@ -47,7 +51,7 @@ def _validation_loss(model, tokenizer, frame: pd.DataFrame, cfg: ExperimentConfi
         labels.extend(part.resolved.astype(int).tolist())
         scores.extend(torch.sigmoid(logits).cpu().tolist())
     model.train()
-    return float(log_loss(labels, np.clip(scores, 1e-7, 1 - 1e-7)))
+    return binary_log_loss(labels, scores)
 
 
 def main() -> None:

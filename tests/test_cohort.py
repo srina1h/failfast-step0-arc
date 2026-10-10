@@ -34,3 +34,18 @@ def test_repository_never_crosses_splits():
     assert split.groupby("repo").split.nunique().max() == 1
     assert split.groupby("instance_id").split.nunique().max() == 1
     assert set(split.split) == {"train", "validation", "test"}
+
+
+def test_repository_split_keeps_both_outcomes_in_every_split():
+    rows = []
+    for repo_idx in range(12):
+        resolved = int(repo_idx >= 6)
+        for attempt in range(3):
+            rows.append({
+                "repo": f"repo-{repo_idx}",
+                "instance_id": f"task-{repo_idx}",
+                "trajectory_id": f"task-{repo_idx}-a{attempt}",
+                "resolved": resolved,
+            })
+    split = split_repositories(pd.DataFrame(rows), seed=0)
+    assert (split.groupby("split").resolved.nunique() == 2).all()
