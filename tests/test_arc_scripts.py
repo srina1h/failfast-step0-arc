@@ -19,4 +19,4 @@ def test_full_submit_checks_gate_markers():
     text = Path("arc/submit_full.sh").read_text()
     assert "PREFLIGHT_OK" in text
     assert "SMOKE_OK" in text
-    assert "rev-parse HEAD" in text
+    assert "git ls-remote" in text
