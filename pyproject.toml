@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "failfast-step0-arc"
 version = "0.1.0"
 description = "Adapted value-only FailFast monitor experiment for coding-agent trajectories"
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.11"
 dependencies = [
   "accelerate==1.10.1",
   "huggingface-hub==0.34.4",
