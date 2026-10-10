@@ -14,9 +14,10 @@ RUN="$ROOT/setup-runs/$SLURM_JOB_ID"
 TOOLS="$ROOT/tools"
 mkdir -p "$RUN" "$TOOLS" "$ROOT/cache" "$ROOT/gates" "$ROOT/current" /home/ssrini27/failfast-arc/logs
 rm -f "$ROOT/gates/SETUP_OK" "$ROOT/gates/PREFLIGHT_OK" "$ROOT/gates/SMOKE_OK"
+export UV_CACHE_DIR="$ROOT/cache/uv"
 
 curl --proto '=https' --tlsv1.2 -LsSf https://releases.astral.sh/github/uv/releases/download/0.12.17/uv-installer.sh -o "$RUN/uv-installer.sh"
-UV_INSTALL_DIR="$TOOLS/uv-0.12.17" sh "$RUN/uv-installer.sh"
+UV_NO_MODIFY_PATH=1 UV_INSTALL_DIR="$TOOLS/uv-0.12.17" sh "$RUN/uv-installer.sh"
 UV="$TOOLS/uv-0.12.17/uv"
 export UV_PYTHON_INSTALL_DIR="$ROOT/python"
 "$UV" python install 3.11
