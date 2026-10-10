@@ -13,6 +13,7 @@ REF=${FAILFAST_REF:-main}
 RUN="$ROOT/setup-runs/$SLURM_JOB_ID"
 TOOLS="$ROOT/tools"
 mkdir -p "$RUN" "$TOOLS" "$ROOT/cache" "$ROOT/gates" "$ROOT/current" /home/ssrini27/failfast-arc/logs
+rm -f "$ROOT/gates/SETUP_OK" "$ROOT/gates/PREFLIGHT_OK" "$ROOT/gates/SMOKE_OK"
 
 curl --proto '=https' --tlsv1.2 -LsSf https://releases.astral.sh/github/uv/releases/download/0.12.17/uv-installer.sh -o "$RUN/uv-installer.sh"
 UV_INSTALL_DIR="$TOOLS/uv-0.12.17" sh "$RUN/uv-installer.sh"

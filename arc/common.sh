@@ -16,6 +16,15 @@ require_file() {
 }
 
 require_file "$GATES/SETUP_OK"
+CURRENT_COMMIT=$(git -C "$REPO" rev-parse HEAD)
+require_gate_commit() {
+  require_file "$1"
+  if [[ "$(cat "$1")" != "$CURRENT_COMMIT" ]]; then
+    echo "Gate $1 belongs to a different Git commit" >&2
+    exit 3
+  fi
+}
+require_gate_commit "$GATES/SETUP_OK"
 export HF_HOME="$CACHE/huggingface"
 export TRANSFORMERS_CACHE="$CACHE/huggingface"
 export TOKENIZERS_PARALLELISM=false

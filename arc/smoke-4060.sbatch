@@ -7,9 +7,10 @@
 #SBATCH --error=/home/ssrini27/failfast-arc/logs/smoke-%j.err
 set -euo pipefail
 source /home/ssrini27/failfast-arc/common.sh
-require_file "$GATES/PREFLIGHT_OK"
+require_gate_commit "$GATES/PREFLIGHT_OK"
 RUN="$ROOT/runs/smoke-$SLURM_JOB_ID"
 mkdir -p "$RUN"
+rm -f "$GATES/SMOKE_OK"
 cd "$REPO"
 for CONFIG in configs/smoke_issue.json configs/smoke.json configs/smoke_synthetic.json; do
   NAME=$(basename "$CONFIG" .json)
@@ -23,6 +24,6 @@ metrics = json.load(open(sys.argv[1]))
 if metrics["pooled_auc"] < 0.90 or metrics["within_task"]["pair_weighted"] < 0.90:
     raise SystemExit("end-to-end synthetic positive control failed")
 PY
-printf '%s\n' "$(git rev-parse HEAD)" > "$RUN/SMOKE_OK"
+printf '%s\n' "$CURRENT_COMMIT" > "$RUN/SMOKE_OK"
 cp "$RUN/SMOKE_OK" "$GATES/SMOKE_OK"
 printf '%s\n' "$RUN" > "$GATES/smoke_run_path.txt"

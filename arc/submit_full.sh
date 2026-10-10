@@ -3,6 +3,9 @@ set -euo pipefail
 ROOT=/mnt/beegfs/ssrini27/failfast-step0
 test -f "$ROOT/gates/PREFLIGHT_OK"
 test -f "$ROOT/gates/SMOKE_OK"
+COMMIT=$(git -C "$ROOT/current/repo" rev-parse HEAD)
+test "$(cat "$ROOT/gates/PREFLIGHT_OK")" = "$COMMIT"
+test "$(cat "$ROOT/gates/SMOKE_OK")" = "$COMMIT"
 cd /home/ssrini27/failfast-arc
 PROFILE=${1:-4060}
 if [[ "$PROFILE" == "4060" ]]; then

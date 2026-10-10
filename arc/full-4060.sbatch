@@ -8,8 +8,8 @@
 #SBATCH --array=0-1
 set -euo pipefail
 source /home/ssrini27/failfast-arc/common.sh
-require_file "$GATES/PREFLIGHT_OK"
-require_file "$GATES/SMOKE_OK"
+require_gate_commit "$GATES/PREFLIGHT_OK"
+require_gate_commit "$GATES/SMOKE_OK"
 CONFIGS=(configs/full_issue.json configs/full_issue_window.json)
 CONFIG=${CONFIGS[$SLURM_ARRAY_TASK_ID]}
 NAME=$(basename "$CONFIG" .json)

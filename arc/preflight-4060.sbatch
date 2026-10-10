@@ -9,7 +9,8 @@ set -euo pipefail
 source /home/ssrini27/failfast-arc/common.sh
 RUN="$ROOT/runs/preflight-$SLURM_JOB_ID"
 mkdir -p "$RUN"
+rm -f "$GATES/PREFLIGHT_OK" "$GATES/SMOKE_OK"
 cd "$REPO"
 "$PYTHON" -m failfast_arc.preflight --config configs/full_issue_window.json --output "$RUN"
 cp "$RUN/memory.json" "$GATES/memory.json"
-cp "$RUN/PREFLIGHT_OK" "$GATES/PREFLIGHT_OK"
+printf '%s\n' "$CURRENT_COMMIT" > "$GATES/PREFLIGHT_OK"
