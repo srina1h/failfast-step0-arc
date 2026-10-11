@@ -13,7 +13,7 @@ from transformers import AutoTokenizer
 from .cohort import select_cohort, split_repositories
 from .config import ExperimentConfig
 from .controls import assert_no_split_leakage
-from .prefix import serialize_example
+from .prefix import append_synthetic_outcome_marker, serialize_example
 
 
 def _trajectory_id(row: dict) -> str:
@@ -116,14 +116,20 @@ def main() -> None:
                 monitor_tokenizer,
             )
             text = serialized.text
+            monitor_count = serialized.monitor_token_count
             if cfg.synthetic_outcome_token:
-                text = "[synthetic-control outcome=" + ("pass" if meta["resolved"] else "fail") + "]\n\n" + text
+                text, monitor_count = append_synthetic_outcome_marker(
+                    text,
+                    meta["resolved"],
+                    monitor_tokenizer,
+                    cfg.max_monitor_tokens,
+                )
             records.append({
                 **meta,
                 "text": text,
                 "last_included_message": serialized.last_included_message,
                 "landmark_token_count": serialized.landmark_token_count,
-                "monitor_token_count": serialized.monitor_token_count,
+                "monitor_token_count": monitor_count,
             })
     prepared = pd.DataFrame(records)
     prepared.to_parquet(args.output / "examples.parquet", index=False)

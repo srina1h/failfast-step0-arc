@@ -20,3 +20,9 @@ def test_full_submit_checks_gate_markers():
     assert "PREFLIGHT_OK" in text
     assert "SMOKE_OK" in text
     assert "git ls-remote" in text
+
+
+def test_smoke_exports_partial_evidence_on_failure():
+    text = Path("arc/smoke-4060.sbatch").read_text()
+    assert "trap export_evidence EXIT" in text
+    assert text.index("smoke_run_path.txt") < text.index("for CONFIG in")

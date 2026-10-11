@@ -70,6 +70,30 @@ def _truncate(text: str, tokenizer, limit: int) -> tuple[str, int]:
     return tokenizer.decode(merged, skip_special_tokens=True), len(merged)
 
 
+def append_synthetic_outcome_marker(text: str, resolved: int, tokenizer, limit: int) -> tuple[str, int]:
+    marker = "\n\n[synthetic-control outcome=" + ("pass" if resolved else "fail") + "]"
+    marker_ids = tokenizer.encode(marker, add_special_tokens=False)
+    special_tokens = max(
+        0,
+        len(tokenizer.encode("", add_special_tokens=True))
+        - len(tokenizer.encode("", add_special_tokens=False)),
+    )
+    content_limit = limit - special_tokens
+    if len(marker_ids) >= content_limit:
+        raise ValueError("synthetic outcome marker does not fit within monitor token limit")
+
+    text_ids = tokenizer.encode(text, add_special_tokens=False)
+    keep = min(len(text_ids), content_limit - len(marker_ids))
+    while True:
+        candidate = tokenizer.decode(text_ids[:keep], skip_special_tokens=True).rstrip() + marker
+        count = len(tokenizer.encode(candidate, add_special_tokens=True))
+        if count <= limit:
+            return candidate, count
+        if keep == 0:
+            raise ValueError("synthetic outcome marker cannot be encoded within monitor token limit")
+        keep -= max(1, count - limit)
+
+
 def serialize_example(row: dict, arm: str, landmark_tokens: int, max_monitor_tokens: int, agent_tokenizer, monitor_tokenizer) -> SerializedExample:
     if arm not in {"issue", "issue_window"}:
         raise ValueError(f"unknown arm: {arm}")

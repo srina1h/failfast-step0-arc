@@ -1,5 +1,5 @@
 
-from failfast_arc.prefix import serialize_example
+from failfast_arc.prefix import append_synthetic_outcome_marker, serialize_example
 
 
 class SpaceTokenizer:
@@ -44,3 +44,14 @@ def test_window_has_eight_recent_steps_and_pinned_edit():
     assert "important-edit" in out.text
     assert "step9" in out.text
     assert "step0" not in out.text
+
+
+def test_synthetic_marker_is_at_scoring_end_and_within_token_limit():
+    tokenizer = SpaceTokenizer()
+    text = " ".join(f"token{i}" for i in range(12))
+
+    marked, count = append_synthetic_outcome_marker(text, 1, tokenizer, 10)
+
+    assert marked.endswith("[synthetic-control outcome=pass]")
+    assert count <= 10
+    assert tokenizer.encode(marked, add_special_tokens=False)[-2:] == ["[synthetic-control", "outcome=pass]"]
