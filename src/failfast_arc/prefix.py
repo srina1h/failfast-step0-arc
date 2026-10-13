@@ -71,7 +71,7 @@ def _truncate(text: str, tokenizer, limit: int) -> tuple[str, int]:
 
 
 def append_synthetic_outcome_marker(text: str, resolved: int, tokenizer, limit: int) -> tuple[str, int]:
-    marker = "\n\n[synthetic-control outcome=" + ("pass" if resolved else "fail") + "]"
+    marker = "\n\n[synthetic-control outcome] " + ("pass" if resolved else "fail")
     marker_ids = tokenizer.encode(marker, add_special_tokens=False)
     special_tokens = max(
         0,

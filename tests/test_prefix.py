@@ -50,8 +50,12 @@ def test_synthetic_marker_is_at_scoring_end_and_within_token_limit():
     tokenizer = SpaceTokenizer()
     text = " ".join(f"token{i}" for i in range(12))
 
-    marked, count = append_synthetic_outcome_marker(text, 1, tokenizer, 10)
+    passing, pass_count = append_synthetic_outcome_marker(text, 1, tokenizer, 10)
+    failing, fail_count = append_synthetic_outcome_marker(text, 0, tokenizer, 10)
 
-    assert marked.endswith("[synthetic-control outcome=pass]")
-    assert count <= 10
-    assert tokenizer.encode(marked, add_special_tokens=False)[-2:] == ["[synthetic-control", "outcome=pass]"]
+    assert passing.endswith("[synthetic-control outcome] pass")
+    assert failing.endswith("[synthetic-control outcome] fail")
+    assert pass_count <= 10
+    assert fail_count <= 10
+    assert tokenizer.encode(passing, add_special_tokens=False)[-1] == "pass"
+    assert tokenizer.encode(failing, add_special_tokens=False)[-1] == "fail"
