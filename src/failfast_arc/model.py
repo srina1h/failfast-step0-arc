@@ -46,7 +46,7 @@ def build_monitor(config: ExperimentConfig):
     return model
 
 
-def load_trained_monitor(config: ExperimentConfig, checkpoint):
+def load_trained_monitor(config: ExperimentConfig, checkpoint, *, trainable=False):
     from peft import PeftModel
     base = load_sequence_classifier(
         config.model_id,
@@ -56,4 +56,8 @@ def load_trained_monitor(config: ExperimentConfig, checkpoint):
         trust_remote_code=False,
     )
     base.config.pad_token_id = base.config.eos_token_id
-    return PeftModel.from_pretrained(base, checkpoint)
+    model = PeftModel.from_pretrained(base, checkpoint, is_trainable=trainable)
+    if trainable:
+        model.gradient_checkpointing_enable()
+        model.enable_input_require_grads()
+    return model

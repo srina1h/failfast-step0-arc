@@ -1,0 +1,8 @@
+{
+  "name": "full_synthetic",
+  "input_arm": "issue_window",
+  "tasks": 500,
+  "attempts_per_task": 11,
+  "optimizer_steps": 1500,
+  "synthetic_outcome_token": true
+}

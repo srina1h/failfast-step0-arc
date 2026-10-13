@@ -14,7 +14,41 @@ from transformers import get_cosine_schedule_with_warmup
 
 from .config import ExperimentConfig
 from .hf_loading import load_tokenizer
-from .model import build_monitor, compute_loss
+from .model import build_monitor, compute_loss, load_trained_monitor
+
+
+def restore_training_state(state, cfg, prepared_hash, optimizer, scheduler, rng):
+    if state['config'] != cfg.to_dict() or state['prepared_hash'] != prepared_hash:
+        raise ValueError('resume checkpoint does not match configuration or prepared data')
+    optimizer.load_state_dict(state['optimizer'])
+    scheduler.load_state_dict(state['scheduler'])
+    rng.setstate(state['pair_rng'])
+    random.setstate(state['python_rng'])
+    np.random.set_state(state['numpy_rng'])
+    torch.set_rng_state(state['torch_rng'])
+    if torch.cuda.is_available():
+        torch.cuda.set_rng_state_all(state['cuda_rng'])
+    return state['step'], state['best'], state['history']
+
+
+def save_training_state(output, model, tokenizer, cfg, prepared_hash, optimizer, scheduler,
+                        rng, step, best, history):
+    checkpoint = output / f'checkpoint-{step}'
+    checkpoint.mkdir(parents=True, exist_ok=False)
+    model.save_pretrained(checkpoint)
+    tokenizer.save_pretrained(checkpoint)
+    torch.save({
+        'config': cfg.to_dict(), 'prepared_hash': prepared_hash,
+        'optimizer': optimizer.state_dict(), 'scheduler': scheduler.state_dict(),
+        'pair_rng': rng.getstate(), 'python_rng': random.getstate(),
+        'numpy_rng': np.random.get_state(), 'torch_rng': torch.get_rng_state(),
+        'cuda_rng': torch.cuda.get_rng_state_all() if torch.cuda.is_available() else [],
+        'step': step, 'best': best, 'history': history,
+    }, checkpoint / 'training_state.pt')
+    # Publish the pointer only after every checkpoint file is saved.
+    pointer = output / 'resume_path.tmp'
+    pointer.write_text(str(checkpoint.resolve()) + '\n')
+    pointer.replace(output / 'resume_path.txt')
 
 
 def binary_log_loss(labels, scores) -> float:
@@ -60,8 +94,12 @@ def main() -> None:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--prepared", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--max-run-steps", type=int, default=None)
+    parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     cfg = ExperimentConfig.load(args.config)
+    if args.max_run_steps is not None and args.max_run_steps <= 0:
+        raise ValueError('max-run-steps must be positive')
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is required")
     args.output.mkdir(parents=True, exist_ok=True)
@@ -78,7 +116,15 @@ def main() -> None:
     tokenizer = load_tokenizer(cfg.model_id, revision=cfg.model_revision)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
-    model = build_monitor(cfg).cuda().train()
+    import hashlib
+    prepared_hash = hashlib.sha256((args.prepared / 'examples.parquet').read_bytes()).hexdigest()
+    resume_path = None
+    if args.resume:
+        resume_path = Path((args.output / 'resume_path.txt').read_text().strip())
+    elif (args.output / 'resume_path.txt').exists():
+        raise ValueError('existing checkpoint requires --resume')
+    model = (load_trained_monitor(cfg, resume_path, trainable=True)
+             if resume_path else build_monitor(cfg)).cuda().train()
     trainable = [parameter for parameter in model.parameters() if parameter.requires_grad]
     optimizer = torch.optim.AdamW(trainable, lr=cfg.learning_rate, weight_decay=cfg.weight_decay)
     scheduler = get_cosine_schedule_with_warmup(
@@ -89,8 +135,17 @@ def main() -> None:
     rng = random.Random(cfg.seed)
     best = math.inf
     history = []
+    completed = 0
+    if resume_path:
+        state = torch.load(resume_path / 'training_state.pt', map_location='cpu', weights_only=False)
+        completed, best, history = restore_training_state(
+            state, cfg, prepared_hash, optimizer, scheduler, rng
+        )
+    stop = min(cfg.optimizer_steps, completed + (args.max_run_steps or cfg.optimizer_steps))
+    if cfg.gradient_accumulation != 1 and args.max_run_steps is not None:
+        raise ValueError('segmented training requires gradient_accumulation=1')
     optimizer.zero_grad(set_to_none=True)
-    for step in range(1, cfg.optimizer_steps + 1):
+    for step in range(completed + 1, stop + 1):
         _, positive, negative = rng.choice(groups)
         left = rng.choice(positive)
         right = rng.choice(negative)
@@ -123,10 +178,16 @@ def main() -> None:
                 tokenizer.save_pretrained(args.output / "best")
         history.append(entry)
         if step % 10 == 0:
-            with (args.output / "train_history.jsonl").open("a") as handle:
-                handle.write(json.dumps(entry, sort_keys=True) + "\n")
+            print(json.dumps(entry, sort_keys=True), flush=True)
+        if step % 50 == 0 or step == stop:
+            (args.output / 'train_history.jsonl').write_text(
+                ''.join(json.dumps(row, sort_keys=True) + '\n' for row in history)
+            )
+            save_training_state(args.output, model, tokenizer, cfg, prepared_hash,
+                                optimizer, scheduler, rng, step, best, history)
     (args.output / "config.json").write_text(json.dumps(cfg.to_dict(), indent=2, sort_keys=True) + "\n")
-    (args.output / "TRAIN_OK").write_text("ok\n")
+    if stop == cfg.optimizer_steps:
+        (args.output / "TRAIN_OK").write_text("ok\n")
 
 
 if __name__ == "__main__":

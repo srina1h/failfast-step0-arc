@@ -27,6 +27,18 @@ The issue-only arm is a tie reference. All attempts of one task receive the same
 
 The test suite checks landmark boundaries, malformed tool arguments, deterministic selection, repository isolation, tied scores, and GPU headroom. The smoke run also trains a separate synthetic control. That control adds an obvious outcome token to each input. The pipeline must recover pooled and within-task AUC of at least 0.90 before the real result is interpreted.
 
+The small synthetic control failed its gate. `configs/full_synthetic.json` tests
+whether 500 tasks and 1,500 updates recover the visible outcome token. This is a
+training validation experiment. Its AUC does not measure early failure prediction.
+`arc/full-synthetic-4060.sbatch` runs at most 250 updates per job. Six jobs can run
+in sequence with Slurm `afterok` dependencies. Training saves adapter, optimizer,
+scheduler, and random state every 50 updates. Each later job resumes the saved
+state. The full cosine learning-rate schedule remains 1,500 updates. Validation
+selects the checkpoint at updates 500, 1,000, and 1,500; test data is scored once
+after training. Both final AUC values must reach 0.90. A failure ends this control
+experiment. The substantive issue-only and issue-window jobs require a separate
+verified decision after the control passes.
+
 ## Local checks
 
 ```bash
