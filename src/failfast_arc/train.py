@@ -10,9 +10,10 @@ import numpy as np
 import pandas as pd
 import torch
 from sklearn.metrics import log_loss
-from transformers import AutoTokenizer, get_cosine_schedule_with_warmup
+from transformers import get_cosine_schedule_with_warmup
 
 from .config import ExperimentConfig
+from .hf_loading import load_tokenizer
 from .model import build_monitor, compute_loss
 
 
@@ -74,7 +75,7 @@ def main() -> None:
     groups = _mixed_groups(train)
     if not groups:
         raise RuntimeError("training split has no mixed-outcome tasks")
-    tokenizer = AutoTokenizer.from_pretrained(cfg.model_id, revision=cfg.model_revision)
+    tokenizer = load_tokenizer(cfg.model_id, revision=cfg.model_revision)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
     model = build_monitor(cfg).cuda().train()

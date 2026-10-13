@@ -26,3 +26,9 @@ def test_smoke_exports_partial_evidence_on_failure():
     text = Path("arc/smoke-4060.sbatch").read_text()
     assert "trap export_evidence EXIT" in text
     assert text.index("smoke_run_path.txt") < text.index("for CONFIG in")
+
+
+def test_experiment_jobs_force_hugging_face_offline():
+    text = Path("arc/common.sh").read_text()
+    assert 'export HF_HUB_OFFLINE=1' in text
+    assert 'export TRANSFORMERS_OFFLINE=1' in text

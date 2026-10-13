@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 
 from .config import ExperimentConfig
+from .hf_loading import load_sequence_classifier
 
 
 def compute_loss(logits: torch.Tensor, labels: torch.Tensor, pair_left: torch.Tensor, pair_right: torch.Tensor, rank_weight: float):
@@ -22,9 +23,7 @@ def compute_loss(logits: torch.Tensor, labels: torch.Tensor, pair_left: torch.Te
 
 def build_monitor(config: ExperimentConfig):
     from peft import LoraConfig, TaskType, get_peft_model
-    from transformers import AutoModelForSequenceClassification
-
-    model = AutoModelForSequenceClassification.from_pretrained(
+    model = load_sequence_classifier(
         config.model_id,
         revision=config.model_revision,
         num_labels=1,
@@ -49,9 +48,7 @@ def build_monitor(config: ExperimentConfig):
 
 def load_trained_monitor(config: ExperimentConfig, checkpoint):
     from peft import PeftModel
-    from transformers import AutoModelForSequenceClassification
-
-    base = AutoModelForSequenceClassification.from_pretrained(
+    base = load_sequence_classifier(
         config.model_id,
         revision=config.model_revision,
         num_labels=1,

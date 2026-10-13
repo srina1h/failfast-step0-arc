@@ -7,6 +7,7 @@ from pathlib import Path
 import torch
 
 from .config import ExperimentConfig
+from .hf_loading import load_tokenizer
 from .model import build_monitor, compute_loss
 
 
@@ -23,9 +24,7 @@ def main() -> None:
     cfg = ExperimentConfig.load(args.config)
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is required")
-    from transformers import AutoTokenizer
-
-    tokenizer = AutoTokenizer.from_pretrained(cfg.model_id, revision=cfg.model_revision)
+    tokenizer = load_tokenizer(cfg.model_id, revision=cfg.model_revision)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
     model = build_monitor(cfg).cuda().train()

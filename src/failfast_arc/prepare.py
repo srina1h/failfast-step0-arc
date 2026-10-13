@@ -7,12 +7,11 @@ from pathlib import Path
 
 import pandas as pd
 import pyarrow.parquet as pq
-from huggingface_hub import hf_hub_download
-from transformers import AutoTokenizer
 
 from .cohort import select_cohort, split_repositories
 from .config import ExperimentConfig
 from .controls import assert_no_split_leakage
+from .hf_loading import load_cached_hub_file, load_tokenizer
 from .prefix import append_synthetic_outcome_marker, serialize_example
 
 
@@ -66,17 +65,17 @@ def main() -> None:
     cfg = ExperimentConfig.load(args.config)
     args.output.mkdir(parents=True, exist_ok=True)
     args.cache.mkdir(parents=True, exist_ok=True)
-    parquet_path = hf_hub_download(
+    parquet_path = load_cached_hub_file(
         repo_id=cfg.dataset_id,
         repo_type="dataset",
         filename=cfg.dataset_file,
         revision=cfg.dataset_revision,
         cache_dir=args.cache,
     )
-    agent_tokenizer = AutoTokenizer.from_pretrained(
+    agent_tokenizer = load_tokenizer(
         cfg.landmark_tokenizer_id, revision=cfg.landmark_tokenizer_revision, cache_dir=args.cache
     )
-    monitor_tokenizer = AutoTokenizer.from_pretrained(
+    monitor_tokenizer = load_tokenizer(
         cfg.model_id, revision=cfg.model_revision, cache_dir=args.cache
     )
     parquet = pq.ParquetFile(parquet_path)

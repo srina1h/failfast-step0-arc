@@ -27,5 +27,7 @@ require_gate_commit() {
 require_gate_commit "$GATES/SETUP_OK"
 export HF_HOME="$CACHE/huggingface"
 export TRANSFORMERS_CACHE="$CACHE/huggingface"
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
 export TOKENIZERS_PARALLELISM=false
 export PYTHONUNBUFFERED=1

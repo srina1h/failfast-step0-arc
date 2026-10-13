@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pandas as pd
 import torch
-from transformers import AutoTokenizer
 
 from .config import ExperimentConfig
 from .controls import assert_no_split_leakage, shuffled_within_task, synthetic_positive_control
+from .hf_loading import load_tokenizer
 from .metrics import bootstrap_intervals, fpr_operating_points, summarize_scores, within_task_auc
 from .model import load_trained_monitor
 
@@ -55,7 +55,7 @@ def main() -> None:
     args.output.mkdir(parents=True, exist_ok=True)
     frame = pd.read_parquet(args.prepared / "examples.parquet")
     assert_no_split_leakage(frame)
-    tokenizer = AutoTokenizer.from_pretrained(args.checkpoint)
+    tokenizer = load_tokenizer(args.checkpoint)
     model = load_trained_monitor(cfg, args.checkpoint).cuda()
     validation = _score(model, tokenizer, frame[frame.split == "validation"].reset_index(drop=True), cfg)
     test = _score(model, tokenizer, frame[frame.split == "test"].reset_index(drop=True), cfg)
