@@ -32,6 +32,10 @@ class ExperimentConfig:
     gradient_accumulation: int = 1
     synthetic_outcome_token: bool = False
     minimum_headroom_bytes: int = 1_073_741_824
+    validation_interval: int = 500
+    initial_validation_step: int = 500
+    checkpoint_interval: int = 50
+    checkpoint_selection: str = 'log_loss'
 
     @classmethod
     def load(cls, path: Path) -> "ExperimentConfig":
@@ -47,13 +51,16 @@ class ExperimentConfig:
     def validate(self) -> None:
         if self.input_arm not in {"issue", "issue_window"}:
             raise ValueError(f"invalid input_arm: {self.input_arm}")
-        for name in ("tasks", "attempts_per_task", "optimizer_steps", "gradient_accumulation"):
+        for name in ("tasks", "attempts_per_task", "optimizer_steps", "gradient_accumulation",
+                     "validation_interval", "initial_validation_step", "checkpoint_interval"):
             if getattr(self, name) <= 0:
                 raise ValueError(f"{name} must be positive")
         if self.landmark_tokens != 20_000:
             raise ValueError("landmark_tokens must remain 20000")
         if self.max_monitor_tokens != 4_096:
             raise ValueError("max_monitor_tokens must remain 4096")
+        if self.checkpoint_selection not in ('log_loss','within_auc'):
+            raise ValueError('invalid checkpoint_selection')
 
     def to_dict(self) -> dict:
         return asdict(self)

@@ -5,6 +5,7 @@ import json
 import math
 from pathlib import Path
 import random
+import time
 
 import numpy as np
 import pandas as pd
@@ -15,6 +16,7 @@ from transformers import get_cosine_schedule_with_warmup
 from .config import ExperimentConfig
 from .hf_loading import load_tokenizer
 from .model import build_monitor, compute_loss, load_trained_monitor
+from .metrics import within_task_auc
 
 
 def restore_training_state(state, cfg, prepared_hash, optimizer, scheduler, rng):
@@ -77,7 +79,7 @@ def _batch(tokenizer, texts: list[str], cfg: ExperimentConfig, device: str):
 
 
 @torch.no_grad()
-def _validation_loss(model, tokenizer, frame: pd.DataFrame, cfg: ExperimentConfig, device: str) -> float:
+def _validation_metrics(model, tokenizer, frame: pd.DataFrame, cfg: ExperimentConfig, device: str):
     model.eval()
     labels, scores = [], []
     for start in range(0, len(frame), 2):
@@ -86,7 +88,15 @@ def _validation_loss(model, tokenizer, frame: pd.DataFrame, cfg: ExperimentConfi
         labels.extend(part.resolved.astype(int).tolist())
         scores.extend(torch.sigmoid(logits).cpu().tolist())
     model.train()
-    return binary_log_loss(labels, scores)
+    return binary_log_loss(labels, scores), within_task_auc(frame.assign(score=scores)).pair_weighted
+
+
+def checkpoint_key(cfg, validation_log_loss, validation_within_auc):
+    if cfg.checkpoint_selection == 'within_auc':
+        if not math.isfinite(validation_within_auc):
+            raise ValueError('within-task checkpoint selection needs mixed validation tasks')
+        return (-validation_within_auc, validation_log_loss)
+    return validation_log_loss
 
 
 def main() -> None:
@@ -133,7 +143,7 @@ def main() -> None:
         num_training_steps=cfg.optimizer_steps,
     )
     rng = random.Random(cfg.seed)
-    best = math.inf
+    best = (math.inf,math.inf) if cfg.checkpoint_selection == 'within_auc' else math.inf
     history = []
     completed = 0
     if resume_path:
@@ -145,6 +155,7 @@ def main() -> None:
     if cfg.gradient_accumulation != 1 and args.max_run_steps is not None:
         raise ValueError('segmented training requires gradient_accumulation=1')
     optimizer.zero_grad(set_to_none=True)
+    started = time.monotonic()
     for step in range(completed + 1, stop + 1):
         _, positive, negative = rng.choice(groups)
         left = rng.choice(positive)
@@ -168,18 +179,21 @@ def main() -> None:
             optimizer.step()
             scheduler.step()
             optimizer.zero_grad(set_to_none=True)
-        entry = {"step": step, "loss": float(loss.detach().cpu()), "bce": float(pieces["bce"]), "rank": float(pieces["rank"])}
-        validation_interval = min(500, cfg.optimizer_steps)
-        if step % validation_interval == 0 or step == cfg.optimizer_steps:
-            entry["validation_log_loss"] = _validation_loss(model, tokenizer, validation, cfg, "cuda")
-            if entry["validation_log_loss"] < best:
-                best = entry["validation_log_loss"]
+        entry = {"step": step, "loss": float(loss.detach().cpu()), "bce": float(pieces["bce"]), "rank": float(pieces["rank"]),
+                 "elapsed_job_seconds":time.monotonic()-started, "learning_rate":scheduler.get_last_lr()[0]}
+        validation_interval = min(cfg.validation_interval, cfg.optimizer_steps)
+        if step == cfg.initial_validation_step or step % validation_interval == 0 or step == cfg.optimizer_steps:
+            print(json.dumps({'stage':'validation_start','step':step}),flush=True)
+            entry["validation_log_loss"], entry['validation_within_auc'] = _validation_metrics(model, tokenizer, validation, cfg, "cuda")
+            candidate = checkpoint_key(cfg,entry['validation_log_loss'],entry['validation_within_auc'])
+            if candidate < best:
+                best = candidate
                 model.save_pretrained(args.output / "best")
                 tokenizer.save_pretrained(args.output / "best")
         history.append(entry)
         if step % 10 == 0:
             print(json.dumps(entry, sort_keys=True), flush=True)
-        if step % 50 == 0 or step == stop:
+        if step % cfg.checkpoint_interval == 0 or step == stop:
             (args.output / 'train_history.jsonl').write_text(
                 ''.join(json.dumps(row, sort_keys=True) + '\n' for row in history)
             )
